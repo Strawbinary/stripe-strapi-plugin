@@ -37,10 +37,10 @@ export default {
       required: true,
       default: true,
     },
-    // metadata: {
-    //   type: 'component',
-    //   component: 'component.key-value-pairs',
-    //   repeatable: true,
-    // },
+    metadata: {
+      type: 'component',
+      component: 'component.key-value-pairs',
+      repeatable: true,
+    },
   },
 };

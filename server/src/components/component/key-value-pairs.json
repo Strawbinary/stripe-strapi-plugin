@@ -3,7 +3,14 @@
   "info": {
     "displayName": "keyValuePairs"
   },
-  "options": {},
+  "pluginOptions": {
+    "content-manager": {
+      "visible": true
+    },
+    "content-type-builder": {
+      "visible": true
+    }
+  },
   "attributes": {
     "key": {
       "type": "string",
