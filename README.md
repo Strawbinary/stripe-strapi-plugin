@@ -1,0 +1,1 @@
+# stripe-strapi-plugin
