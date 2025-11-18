@@ -1,23 +1,19 @@
 import type { Core } from '@strapi/strapi';
 
 import runInitialStripeProductMigration from './migrations/run-initial-stripe-product-migration';
+import { resolvePluginConfig } from './stripe/config';
 
 const bootstrap = async ({ strapi }: { strapi: Core.Strapi }) => {
   const store = strapi.store({ type: 'plugin', name: 'stripe-strapi-plugin' });
   const migrationAlreadyRun = await store.get({ key: 'initialProductsMigrationCompleted' });
 
-  const pluginConfig = strapi.config.get('plugin.stripe-strapi-plugin', {}) as {
-    secretKey?: string;
-    stripeSecretKey?: string;
-    alwaysRunMigration?: boolean;
-  };
+  const pluginConfig = resolvePluginConfig(strapi);
 
   if (migrationAlreadyRun && !pluginConfig.alwaysRunMigration) {
     return;
   }
 
-  const secretKey =
-    pluginConfig.secretKey ?? pluginConfig.stripeSecretKey ?? process.env.STRIPE_SECRET_KEY;
+  const secretKey = pluginConfig.secretKey;
 
   if (!secretKey) {
     strapi.log.warn(

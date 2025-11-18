@@ -1,13 +1,9 @@
 import Stripe from 'stripe';
 import { errors } from '@strapi/utils';
 
-const STRIPE_API_VERSION: Stripe.LatestApiVersion = '2025-10-29.clover';
-
-type MetadataEntry = {
-  __component?: string;
-  key?: string | null;
-  value?: string | null;
-};
+import { STRIPE_API_VERSION } from '../../stripe/constants';
+import { resolvePluginConfig } from '../../stripe/config';
+import { buildStripeMetadata, type MetadataEntry } from '../../stripe/metadata';
 
 type StripeProductLifecycleData = {
   name?: string | null;
@@ -26,41 +22,7 @@ type LifecycleEvent = {
 };
 
 const getSecretKey = (): string | null => {
-  const pluginConfig = strapi.config.get('plugin.stripe-strapi-plugin', {}) as {
-    secretKey?: string;
-    stripeSecretKey?: string;
-  };
-
-  return (
-    pluginConfig.secretKey ??
-    pluginConfig.stripeSecretKey ??
-    process.env.STRIPE_SECRET_KEY ??
-    null
-  );
-};
-
-const buildStripeMetadata = (entries: MetadataEntry[] | null | undefined) => {
-  if (!Array.isArray(entries) || entries.length === 0) {
-    return undefined;
-  }
-
-  return entries.reduce<Record<string, string>>((acc, entry) => {
-    if (!entry || typeof entry.key !== 'string') {
-      return acc;
-    }
-
-    const key = entry.key.trim();
-
-    if (!key) {
-      return acc;
-    }
-
-    const value = entry.value ?? '';
-
-    acc[key] = String(value);
-
-    return acc;
-  }, {});
+  return resolvePluginConfig(strapi).secretKey;
 };
 
 const createStripeProduct = async (data: StripeProductLifecycleData) => {
@@ -96,9 +58,7 @@ const createStripeProduct = async (data: StripeProductLifecycleData) => {
 
     const reason = error instanceof Error ? error.message : 'Unknown error';
 
-    throw new errors.ApplicationError(
-      `Failed to create Stripe product: ${reason}`
-    );
+    throw new errors.ApplicationError(`Failed to create Stripe product: ${reason}`);
   }
 };
 

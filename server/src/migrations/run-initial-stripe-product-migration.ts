@@ -1,8 +1,9 @@
 import type { Core } from '@strapi/strapi';
 import Stripe from 'stripe';
 
-const STRIPE_API_VERSION: Stripe.LatestApiVersion = '2025-10-29.clover';
-const STRIPE_PRODUCT_UID = 'plugin::stripe-strapi-plugin.stripe-product';
+import { STRIPE_PRODUCT_UID } from '../constants';
+import { STRIPE_API_VERSION } from '../stripe/constants';
+import { buildComponentMetadata } from '../stripe/metadata';
 
 type StripeProductDocumentsApi = {
   findFirst(params?: Record<string, unknown>): Promise<Record<string, unknown> | null>;
@@ -51,21 +52,11 @@ const runInitialStripeProductMigration = async ({
             $eq: product.id,
           },
         },
-        status: 'draft',
       });
 
       if (existing) {
         continue;
       }
-
-      const metadataEntries = Object.entries(product.metadata ?? {}).reduce<
-        { key: string; value: string }[]
-      >((acc, [key, value]) => {
-        if (key) {
-          acc.push({ key, value: String(value ?? '') });
-        }
-        return acc;
-      }, []);
 
       await stripeProductDocuments.create({
         data: {
@@ -75,9 +66,8 @@ const runInitialStripeProductMigration = async ({
           imageUrl: product.images && product.images.length > 0 ? product.images[0] : undefined,
           taxCode: product.tax_code ?? 'txcd_10000000',
           active: product.active ?? true,
-          metadata: metadataEntries.length > 0 ? metadataEntries : [],
+          metadata: buildComponentMetadata(product.metadata),
         },
-        status: 'published',
       });
 
       createdCount += 1;

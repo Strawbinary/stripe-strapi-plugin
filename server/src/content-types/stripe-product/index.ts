@@ -7,7 +7,7 @@ export default {
     displayName: 'Stripe Produkte',
   },
   options: {
-    draftAndPublish: true,
+    draftAndPublish: false,
   },
   pluginOptions: {},
   attributes: {
