@@ -6,6 +6,7 @@ import { STRIPE_PRODUCT_UID } from '../constants';
 import { STRIPE_API_VERSION } from '../stripe/constants';
 import { resolvePluginConfig } from '../stripe/config';
 import { buildComponentMetadata } from '../stripe/metadata';
+import { runWithStripeSyncContext } from '../stripe/lifecycle-context';
 
 type StripeProductDocumentsApi = ReturnType<Core.Strapi['documents']>;
 
@@ -91,17 +92,21 @@ const createStripeSyncService = ({ strapi }: { strapi: Core.Strapi }) => {
     const existing = await findProductDocument(product.id);
 
     if (!existing) {
-      await documentsApi.create({
-        data: payload,
-      });
+      await runWithStripeSyncContext(() =>
+        documentsApi.create({
+          data: payload,
+        })
+      );
 
       return 'created';
     }
 
-    await documentsApi.update({
-      documentId: existing.documentId,
-      data: payload,
-    });
+    await runWithStripeSyncContext(() =>
+      documentsApi.update({
+        documentId: existing.documentId,
+        data: payload,
+      })
+    );
 
     return 'updated';
   };
@@ -119,9 +124,11 @@ const createStripeSyncService = ({ strapi }: { strapi: Core.Strapi }) => {
       return false;
     }
 
-    await documentsApi.delete({
-      documentId: existing.documentId,
-    });
+    await runWithStripeSyncContext(() =>
+      documentsApi.delete({
+        documentId: existing.documentId,
+      })
+    );
 
     return true;
   };

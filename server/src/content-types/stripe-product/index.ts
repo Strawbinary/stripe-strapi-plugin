@@ -4,7 +4,7 @@ export default {
   info: {
     singularName: 'stripe-product',
     pluralName: 'stripe-products',
-    displayName: 'Stripe Produkte',
+    displayName: 'Stripe Products',
   },
   options: {
     draftAndPublish: false,
