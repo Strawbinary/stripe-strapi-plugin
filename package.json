@@ -1,6 +1,25 @@
 {
+  "name": "@strawbinary-io/stripe-strapi-plugin",
   "version": "0.0.0",
-  "keywords": [],
+  "description": "A powerful Strapi plugin to easily manage and sync your Stripe Products, Prices, Coupons and more – directly in your project.",
+  "keywords": [
+    "strapi",
+    "stripe",
+    "strapi5",
+    "strapi-cms",
+    "cms",
+    "headlesscms"
+  ],
+  "homepage": "https://strawbinary.de/",
+  "bugs": {
+    "url": "https://github.com/Strawbinary/stripe-strapi-plugin/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/Strawbinary/stripe-strapi-plugin.git"
+  },
+  "license": "MIT",
+  "author": "Strawbinary <info@strawbinary.de>",
   "type": "commonjs",
   "exports": {
     "./package.json": "./package.json",
@@ -28,7 +47,8 @@
     "watch:link": "strapi-plugin watch:link",
     "verify": "strapi-plugin verify",
     "test:ts:front": "run -T tsc -p admin/tsconfig.json",
-    "test:ts:back": "run -T tsc -p server/tsconfig.json"
+    "test:ts:back": "run -T tsc -p server/tsconfig.json",
+    "release": "commit-and-tag-version"
   },
   "dependencies": {
     "@strapi/design-system": "^2.0.0-rc.30",
@@ -37,21 +57,22 @@
     "stripe": "^19.2.0"
   },
   "devDependencies": {
-    "@strapi/strapi": "^5.30.0",
     "@strapi/sdk-plugin": "^5.3.2",
+    "@strapi/strapi": "^5.30.0",
+    "@strapi/typescript-utils": "^5.30.0",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "commit-and-tag-version": "^12.6.0",
     "prettier": "^3.6.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.30.1",
     "styled-components": "^6.1.19",
-    "@types/react": "^19.2.2",
-    "@types/react-dom": "^19.2.2",
-    "@strapi/typescript-utils": "^5.30.0",
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "@strapi/strapi": "^5.30.0",
     "@strapi/sdk-plugin": "^5.3.2",
+    "@strapi/strapi": "^5.30.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.30.1",
@@ -62,9 +83,5 @@
     "name": "stripe-strapi-plugin",
     "displayName": "Stripe Plugin",
     "description": ""
-  },
-  "name": "stripe-strapi-plugin",
-  "description": "",
-  "license": "MIT",
-  "author": "Strawbinary <info@strawbinary.de>"
+  }
 }
