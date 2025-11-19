@@ -1,16 +1,14 @@
 # Strapi 5 - Stripe Plugin
 
-<div style="display: flex; flex-direction: column; gap: 16px;width:100%;">
-  <div style="display: flex">
-    <img src="public/assets/Stripe_wordmark_Blurple.png" alt="Stripe Logo" width="200" style="margin-left: auto;margin-right: auto;"/> 
-  </div>
-
-  <p align="center">
-    <a href="https://www.npmjs.com/package/@strawbinary-io/">
-      <img src="https://img.shields.io/npm/v/" alt="NPM Version" />
-    </a>
-  </p>
+<div align="center" >
+  <img src="public/assets/Stripe_wordmark_Blurple.png" alt="Stripe Logo" width="200" style="margin-left: auto;margin-right: auto;"/> 
 </div>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@strawbinary-io/">
+    <img src="https://img.shields.io/npm/v/" alt="NPM Version" />
+  </a>
+</p>
 
 A powerful Strapi plugin to easily manage and sync your Stripe Products, Prices, Coupons and more – directly in your project.
 
