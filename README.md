@@ -1,6 +1,6 @@
 # Strapi 5 - Stripe Plugin
 
-<div style="display: flex; flex-direction: column; gap: 16px;">
+<div style="display: flex; flex-direction: column; gap: 16px;width:100%;">
   <div style="display: flex">
     <img src="public/assets/Stripe_wordmark_Blurple.png" alt="Stripe Logo" width="200" style="margin-left: auto;margin-right: auto;"/> 
   </div>
@@ -14,8 +14,11 @@
 
 A powerful Strapi plugin to easily manage and sync your Stripe Products, Prices, Coupons and more – directly in your project.
 
+<img src="public/assets/Strawbinary_Plugin_Logo_dark_outlined.svg" alt="Strawbinary Plugin Logo" width="200"/>
+
 **Core Contributor**: [Strawbinary](https://github.com/Strawbinary)  
-**Follow** [@strawbinary](https://www.linkedin.com/company/strawbinary-gbr/)
+**Follow**: [@strawbinary](https://www.linkedin.com/company/strawbinary-gbr/)
+**Website**: [strawbinary](https://strawbinary.com)
 
 ---
 
