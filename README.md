@@ -14,8 +14,8 @@ A powerful Strapi plugin to easily manage and sync your Stripe Products, Prices,
 
 <img src="public/assets/Strawbinary_Plugin_Logo_dark_outlined.svg" alt="Strawbinary Plugin Logo" width="200"/>
 
-**Core Contributor**: [Strawbinary](https://github.com/Strawbinary)  
-**Follow**: [@strawbinary](https://www.linkedin.com/company/strawbinary-gbr/)
+**Core Contributor**: [Strawbinary](https://github.com/Strawbinary) <br>
+**Follow**: [@strawbinary](https://www.linkedin.com/company/strawbinary-gbr/) <br>
 **Website**: [strawbinary](https://strawbinary.com)
 
 ---
