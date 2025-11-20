@@ -1,0 +1,32 @@
+{
+  "collectionName": "components_stripe_price_tiers",
+  "info": {
+    "displayName": "priceTier"
+  },
+  "pluginOptions": {
+    "content-manager": {
+      "visible": true
+    },
+    "content-type-builder": {
+      "visible": true
+    }
+  },
+  "attributes": {
+    "flatAmount": {
+      "type": "integer"
+    },
+    "flatAmountDecimal": {
+      "type": "string"
+    },
+    "unitAmount": {
+      "type": "integer"
+    },
+    "unitAmountDecimal": {
+      "type": "string"
+    },
+    "upTo": {
+      "type": "integer"
+    }
+  },
+  "config": {}
+}

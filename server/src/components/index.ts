@@ -1,10 +1,18 @@
 import type { Core } from '@strapi/strapi';
 
 import keyValuePairs from './component/key-value-pairs.json';
+import priceCustomUnitAmount from './stripe/price-custom-unit-amount.json';
+import priceRecurring from './stripe/price-recurring.json';
+import priceTier from './stripe/price-tier.json';
 
 const rawComponents = {
   component: {
     'key-value-pairs': keyValuePairs,
+  },
+  stripe: {
+    'price-custom-unit-amount': priceCustomUnitAmount,
+    'price-recurring': priceRecurring,
+    'price-tier': priceTier,
   },
 };
 

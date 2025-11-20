@@ -693,5 +693,11 @@ export default {
       component: 'component.key-value-pairs',
       repeatable: true,
     },
+    stripePrices: {
+      type: 'relation',
+      relation: 'oneToMany',
+      target: 'plugin::stripe-strapi-plugin.stripe-price',
+      mappedBy: 'stripeProduct',
+    },
   },
 };

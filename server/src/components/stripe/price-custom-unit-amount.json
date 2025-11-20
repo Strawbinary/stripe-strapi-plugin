@@ -1,0 +1,26 @@
+{
+  "collectionName": "components_stripe_price_custom_unit_amount",
+  "info": {
+    "displayName": "priceCustomUnitAmount"
+  },
+  "pluginOptions": {
+    "content-manager": {
+      "visible": true
+    },
+    "content-type-builder": {
+      "visible": true
+    }
+  },
+  "attributes": {
+    "maximum": {
+      "type": "integer"
+    },
+    "minimum": {
+      "type": "integer"
+    },
+    "preset": {
+      "type": "integer"
+    }
+  },
+  "config": {}
+}

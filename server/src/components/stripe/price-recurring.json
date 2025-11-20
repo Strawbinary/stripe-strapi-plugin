@@ -1,0 +1,31 @@
+{
+  "collectionName": "components_stripe_price_recurring",
+  "info": {
+    "displayName": "priceRecurring"
+  },
+  "pluginOptions": {
+    "content-manager": {
+      "visible": true
+    },
+    "content-type-builder": {
+      "visible": true
+    }
+  },
+  "attributes": {
+    "interval": {
+      "type": "enumeration",
+      "enum": ["day", "week", "month", "year"]
+    },
+    "interval_count": {
+      "type": "integer"
+    },
+    "meter": {
+      "type": "string"
+    },
+    "usage_type": {
+      "type": "enumeration",
+      "enum": ["metered", "licensed"]
+    }
+  },
+  "config": {}
+}
