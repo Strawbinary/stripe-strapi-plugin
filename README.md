@@ -45,9 +45,9 @@ This Strapi plugin synchronizes Stripe products, prices, coupons, and promotion 
 ## ⏳ Installation
 
 ```bash
-npm install stripe-strapi-plugin
+npm install @strawbinary-io/stripe-strapi-plugin
 # or
-yarn add stripe-strapi-plugin
+yarn add @strawbinary-io/stripe-strapi-plugin
 ```
 
 Register the plugin in `config/plugins.ts`:
