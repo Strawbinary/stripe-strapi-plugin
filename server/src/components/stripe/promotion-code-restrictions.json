@@ -1,0 +1,26 @@
+{
+  "collectionName": "components_stripe_promotion_code_restrictions",
+  "info": {
+    "displayName": "promotionCodeRestrictions"
+  },
+  "pluginOptions": {
+    "content-manager": {
+      "visible": true
+    },
+    "content-type-builder": {
+      "visible": true
+    }
+  },
+  "attributes": {
+    "firstTimeTransaction": {
+      "type": "boolean"
+    },
+    "minimumAmount": {
+      "type": "integer"
+    },
+    "minimumAmountCurrency": {
+      "type": "string"
+    }
+  },
+  "config": {}
+}

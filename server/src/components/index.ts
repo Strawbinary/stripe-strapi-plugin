@@ -4,6 +4,7 @@ import keyValuePairs from './component/key-value-pairs.json';
 import priceCustomUnitAmount from './stripe/price-custom-unit-amount.json';
 import priceRecurring from './stripe/price-recurring.json';
 import priceTier from './stripe/price-tier.json';
+import promotionCodeRestrictions from './stripe/promotion-code-restrictions.json';
 
 const rawComponents = {
   component: {
@@ -13,6 +14,7 @@ const rawComponents = {
     'price-custom-unit-amount': priceCustomUnitAmount,
     'price-recurring': priceRecurring,
     'price-tier': priceTier,
+    'promotion-code-restrictions': promotionCodeRestrictions,
   },
 };
 

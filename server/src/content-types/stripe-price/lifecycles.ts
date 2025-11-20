@@ -45,7 +45,7 @@ type StripePriceLifecycleData = {
   stripeProduct?: RelationInput;
   active?: boolean | null;
   billingScheme?: Stripe.Price.BillingScheme | null;
-  created?: number | null;
+  created?: string | Date | null;
   currency?: string | null;
   customUnitAmount?: PriceCustomUnitAmountComponent | null;
   livemode?: boolean | null;

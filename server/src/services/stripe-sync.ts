@@ -2,7 +2,12 @@ import type { Core } from '@strapi/strapi';
 import { errors } from '@strapi/utils';
 import Stripe from 'stripe';
 
-import { STRIPE_PRICE_UID, STRIPE_PRODUCT_UID } from '../constants';
+import {
+  STRIPE_PRICE_UID,
+  STRIPE_PRODUCT_UID,
+  STRIPE_COUPON_UID,
+  STRIPE_PROMOTION_CODE_UID,
+} from '../constants';
 import { STRIPE_API_VERSION } from '../stripe/constants';
 import { resolvePluginConfig } from '../stripe/config';
 import { buildComponentMetadata } from '../stripe/metadata';
@@ -10,6 +15,8 @@ import { runWithStripeSyncContext } from '../stripe/lifecycle-context';
 
 type StripeProductDocumentsApi = ReturnType<Core.Strapi['documents']>;
 type StripePriceDocumentsApi = ReturnType<Core.Strapi['documents']>;
+type StripeCouponDocumentsApi = ReturnType<Core.Strapi['documents']>;
+type StripePromotionCodeDocumentsApi = ReturnType<Core.Strapi['documents']>;
 
 type PriceRecurringComponent = {
   interval?: Stripe.Price.Recurring.Interval | null;
@@ -32,12 +39,21 @@ type PriceCustomUnitAmountComponent = {
   preset?: number | null;
 };
 
+type PromotionCodeRestrictionsComponent = {
+  firstTimeTransaction?: boolean | null;
+  minimumAmount?: number | null;
+  minimumAmountCurrency?: string | null;
+};
+
 type UpsertResult = 'created' | 'updated' | null;
 
 const PRODUCT_EVENT_TYPES = new Set(['product.created', 'product.updated']);
 const PRODUCT_DELETE_EVENT_TYPES = new Set(['product.deleted']);
 const PRICE_EVENT_TYPES = new Set(['price.created', 'price.updated']);
 const PRICE_DELETE_EVENT_TYPES = new Set(['price.deleted']);
+const COUPON_EVENT_TYPES = new Set(['coupon.created', 'coupon.updated']);
+const COUPON_DELETE_EVENT_TYPES = new Set(['coupon.deleted']);
+const PROMOTION_CODE_EVENT_TYPES = new Set(['promotion_code.created', 'promotion_code.updated']);
 
 const logPrefix = '[stripe-strapi-plugin]';
 
@@ -335,7 +351,7 @@ const createStripeSyncService = ({ strapi }: { strapi: Core.Strapi }) => {
     stripeProduct: productDocumentId,
     active: price.active,
     billingScheme: price.billing_scheme,
-    created: price.created,
+    created: convertUnixTimestampToIso(price.created),
     currency: price.currency ? price.currency.toUpperCase() : price.currency,
     customUnitAmount: buildCustomUnitAmountComponent(price.custom_unit_amount),
     livemode: price.livemode,
@@ -443,6 +459,385 @@ const createStripeSyncService = ({ strapi }: { strapi: Core.Strapi }) => {
     return { fetched, changed };
   };
 
+  const getCouponDocumentsApi = (): StripeCouponDocumentsApi | null => {
+    const documentsApi = strapi.documents;
+
+    if (typeof documentsApi !== 'function') {
+      strapi.log.error(`${logPrefix} Document service API is unavailable. Skipping Stripe coupon sync.`);
+      return null;
+    }
+
+    return documentsApi(STRIPE_COUPON_UID);
+  };
+
+  const findCouponDocument = async (stripeCouponId: string) => {
+    const documentsApi = getCouponDocumentsApi();
+
+    if (!documentsApi) {
+      return null;
+    }
+
+    const existing = await documentsApi.findFirst({
+      fields: ['documentId'],
+      filters: {
+        stripeCouponId: {
+          $eq: stripeCouponId,
+        },
+      },
+    });
+
+    if (existing?.documentId) {
+      return { documentId: existing.documentId };
+    }
+
+    return null;
+  };
+
+  const convertUnixTimestampToIso = (timestamp?: number | null) => {
+    if (typeof timestamp !== 'number' || Number.isNaN(timestamp)) {
+      return null;
+    }
+
+    return new Date(timestamp * 1000).toISOString();
+  };
+
+  const resolveCouponApplicableProductDocumentIds = async (coupon: Stripe.Coupon) => {
+    const productRefs = coupon.applies_to?.products;
+
+    if (!Array.isArray(productRefs) || productRefs.length === 0) {
+      return [];
+    }
+
+    const relatedDocuments = await Promise.all(
+      productRefs.map(async (productRef) => {
+        return ensureProductDocument(productRef);
+      })
+    );
+
+    return relatedDocuments
+      .map((entry) => entry?.documentId)
+      .filter((documentId): documentId is string => typeof documentId === 'string');
+  };
+
+  const buildCouponPayload = async (coupon: Stripe.Coupon) => {
+    const appliesToProducts = await resolveCouponApplicableProductDocumentIds(coupon);
+
+    return {
+      stripeCouponId: coupon.id,
+      name: coupon.name ?? coupon.id,
+      duration: coupon.duration ?? 'forever',
+      durationInMonths: coupon.duration_in_months ?? null,
+      amountOff: coupon.amount_off ?? null,
+      percentOff: coupon.percent_off ?? null,
+      currency: coupon.currency ? coupon.currency.toUpperCase() : coupon.currency,
+      redeemBy: convertUnixTimestampToIso(coupon.redeem_by),
+      maxRedemptions: coupon.max_redemptions ?? null,
+      timesRedeemed: coupon.times_redeemed ?? null,
+      appliesToProducts,
+      livemode: coupon.livemode,
+      valid: coupon.valid ?? null,
+      metadata: buildComponentMetadata(coupon.metadata),
+      created: convertUnixTimestampToIso(coupon.created),
+    };
+  };
+
+  const upsertCoupon = async (coupon: Stripe.Coupon): Promise<UpsertResult> => {
+    if (!coupon?.id) {
+      return null;
+    }
+
+    const documentsApi = getCouponDocumentsApi();
+
+    if (!documentsApi) {
+      return null;
+    }
+
+    const payload = await buildCouponPayload(coupon);
+    const existing = await findCouponDocument(coupon.id);
+
+    if (!existing) {
+      await runWithStripeSyncContext(() =>
+        documentsApi.create({
+          data: payload,
+        })
+      );
+
+      return 'created';
+    }
+
+    await runWithStripeSyncContext(() =>
+      documentsApi.update({
+        documentId: existing.documentId,
+        data: payload,
+      })
+    );
+
+    return 'updated';
+  };
+
+  const deleteCouponByStripeId = async (stripeCouponId: string) => {
+    const documentsApi = getCouponDocumentsApi();
+
+    if (!documentsApi) {
+      return false;
+    }
+
+    const existing = await findCouponDocument(stripeCouponId);
+
+    if (!existing) {
+      return false;
+    }
+
+    await runWithStripeSyncContext(() =>
+      documentsApi.delete({
+        documentId: existing.documentId,
+      })
+    );
+
+    return true;
+  };
+
+  const syncCouponsFromStripe = async () => {
+    const stripe = getStripeClient();
+
+    let fetched = 0;
+    let changed = 0;
+
+    for await (const coupon of stripe.coupons.list({ limit: 100 })) {
+      fetched += 1;
+
+      if (!coupon?.id) {
+        continue;
+      }
+
+      const result = await upsertCoupon(coupon);
+
+      if (result) {
+        changed += 1;
+      }
+    }
+
+    strapi.log.debug(
+      `${logPrefix} Coupon sync finished. Processed ${fetched} Stripe coupons, changed ${changed}.`
+    );
+
+    return { fetched, changed };
+  };
+
+  const getPromotionCodeDocumentsApi = (): StripePromotionCodeDocumentsApi | null => {
+    const documentsApi = strapi.documents;
+
+    if (typeof documentsApi !== 'function') {
+      strapi.log.error(
+        `${logPrefix} Document service API is unavailable. Skipping Stripe promotion code sync.`
+      );
+      return null;
+    }
+
+    return documentsApi(STRIPE_PROMOTION_CODE_UID);
+  };
+
+  const findPromotionCodeDocument = async (stripePromotionCodeId: string) => {
+    const documentsApi = getPromotionCodeDocumentsApi();
+
+    if (!documentsApi) {
+      return null;
+    }
+
+    const existing = await documentsApi.findFirst({
+      fields: ['documentId'],
+      filters: {
+        stripePromotionCodeId: {
+          $eq: stripePromotionCodeId,
+        },
+      },
+    });
+
+    if (existing?.documentId) {
+      return { documentId: existing.documentId };
+    }
+
+    return null;
+  };
+
+  const buildPromotionCodeRestrictionsComponent = (
+    restrictions: Stripe.PromotionCode.Restrictions | null
+  ): PromotionCodeRestrictionsComponent | null => {
+    if (!restrictions) {
+      return null;
+    }
+
+    if (
+      restrictions.first_time_transaction == null &&
+      restrictions.minimum_amount == null &&
+      !restrictions.minimum_amount_currency
+    ) {
+      return null;
+    }
+
+    return {
+      firstTimeTransaction: restrictions.first_time_transaction ?? null,
+      minimumAmount: restrictions.minimum_amount ?? null,
+      minimumAmountCurrency: restrictions.minimum_amount_currency
+        ? restrictions.minimum_amount_currency.toUpperCase()
+        : null,
+    };
+  };
+
+  const buildPromotionCodePayload = (
+    promotionCode: Stripe.PromotionCode,
+    couponDocumentId: string
+  ) => ({
+    stripePromotionCodeId: promotionCode.id,
+    code: promotionCode.code ?? null,
+    active: promotionCode.active,
+    customer:
+      typeof promotionCode.customer === 'string'
+        ? promotionCode.customer
+        : promotionCode.customer?.id ?? null,
+    expiresAt: convertUnixTimestampToIso(promotionCode.expires_at),
+    livemode: promotionCode.livemode,
+    maxRedemptions: promotionCode.max_redemptions ?? null,
+    timesRedeemed: promotionCode.times_redeemed ?? null,
+    restrictions: buildPromotionCodeRestrictionsComponent(promotionCode.restrictions),
+    metadata: buildComponentMetadata(promotionCode.metadata),
+    created: convertUnixTimestampToIso(promotionCode.created),
+    stripeCoupon: couponDocumentId,
+  });
+
+  const ensureCouponDocument = async (
+    promotion: Stripe.PromotionCode['promotion'] | null
+  ): Promise<{ documentId: string } | null> => {
+    if (!promotion) {
+      return null;
+    }
+
+    const couponRef = promotion.coupon;
+
+    const stripeCouponId =
+      typeof couponRef === 'string'
+        ? couponRef
+        : typeof couponRef?.id === 'string'
+          ? couponRef.id
+          : null;
+
+    type MaybeDeletedCoupon = Stripe.Coupon & { deleted?: boolean };
+    const couponObject =
+      typeof couponRef === 'object' && couponRef !== null
+        ? (couponRef as MaybeDeletedCoupon)
+        : null;
+    const couponIsDeleted = couponObject != null && Boolean(couponObject.deleted);
+
+    if (!stripeCouponId) {
+      return null;
+    }
+
+    const existing = await findCouponDocument(stripeCouponId);
+
+    if (existing) {
+      if (couponObject && !couponIsDeleted) {
+        await upsertCoupon(couponObject as Stripe.Coupon);
+      }
+
+      return existing;
+    }
+
+    if (couponObject && !couponIsDeleted) {
+      await upsertCoupon(couponObject as Stripe.Coupon);
+      return findCouponDocument(stripeCouponId);
+    }
+
+    try {
+      const stripe = getStripeClient();
+      const coupon = await stripe.coupons.retrieve(stripeCouponId);
+
+      if (coupon && !('deleted' in coupon && Boolean(coupon.deleted))) {
+        await upsertCoupon(coupon as Stripe.Coupon);
+        return findCouponDocument(stripeCouponId);
+      }
+    } catch (error) {
+      strapi.log.error(
+        `${logPrefix} Failed to resolve Stripe coupon "${stripeCouponId}" required for promotion code sync.`,
+        error
+      );
+    }
+
+    return null;
+  };
+
+  const upsertPromotionCode = async (promotionCode: Stripe.PromotionCode): Promise<UpsertResult> => {
+    if (!promotionCode?.id) {
+      return null;
+    }
+
+    const documentsApi = getPromotionCodeDocumentsApi();
+
+    if (!documentsApi) {
+      return null;
+    }
+
+    const relatedCoupon = await ensureCouponDocument(promotionCode.promotion);
+
+    if (!relatedCoupon?.documentId) {
+      strapi.log.warn(
+        `${logPrefix} Skipping promotion code "${promotionCode.id}" because the related coupon could not be resolved.`
+      );
+      return null;
+    }
+
+    const payload = buildPromotionCodePayload(promotionCode, relatedCoupon.documentId);
+    const existing = await findPromotionCodeDocument(promotionCode.id);
+
+    if (!existing) {
+      await runWithStripeSyncContext(() =>
+        documentsApi.create({
+          data: payload,
+        })
+      );
+
+      return 'created';
+    }
+
+    await runWithStripeSyncContext(() =>
+      documentsApi.update({
+        documentId: existing.documentId,
+        data: payload,
+      })
+    );
+
+    return 'updated';
+  };
+
+  const syncPromotionCodesFromStripe = async () => {
+    const stripe = getStripeClient();
+
+    let fetched = 0;
+    let changed = 0;
+
+    for await (const promotionCode of stripe.promotionCodes.list({
+      limit: 100,
+      expand: ['data.promotion.coupon'],
+    })) {
+      fetched += 1;
+
+      if (!promotionCode?.id) {
+        continue;
+      }
+
+      const result = await upsertPromotionCode(promotionCode);
+
+      if (result) {
+        changed += 1;
+      }
+    }
+
+    strapi.log.debug(
+      `${logPrefix} Promotion code sync finished. Processed ${fetched} Stripe promotion codes, changed ${changed}.`
+    );
+
+    return { fetched, changed };
+  };
+
   const handleProductEvent = async (event: Stripe.Event) => {
     const payload = event.data?.object as Stripe.Product | Stripe.DeletedProduct | undefined;
 
@@ -475,6 +870,33 @@ const createStripeSyncService = ({ strapi }: { strapi: Core.Strapi }) => {
     await upsertPrice(payload as Stripe.Price);
   };
 
+  const handleCouponEvent = async (event: Stripe.Event) => {
+    const payload = event.data?.object as Stripe.Coupon | undefined;
+
+    if (!payload || typeof payload.id !== 'string') {
+      strapi.log.warn(`${logPrefix} Ignoring ${event.type} event without a coupon payload.`);
+      return;
+    }
+
+    if (COUPON_DELETE_EVENT_TYPES.has(event.type)) {
+      await deleteCouponByStripeId(payload.id);
+      return;
+    }
+
+    await upsertCoupon(payload as Stripe.Coupon);
+  };
+
+  const handlePromotionCodeEvent = async (event: Stripe.Event) => {
+    const payload = event.data?.object as Stripe.PromotionCode | undefined;
+
+    if (!payload || typeof payload.id !== 'string') {
+      strapi.log.warn(`${logPrefix} Ignoring ${event.type} event without a promotion code payload.`);
+      return;
+    }
+
+    await upsertPromotionCode(payload as Stripe.PromotionCode);
+  };
+
   const handleWebhookEvent = async (event: Stripe.Event) => {
     if (PRODUCT_EVENT_TYPES.has(event.type) || PRODUCT_DELETE_EVENT_TYPES.has(event.type)) {
       await handleProductEvent(event);
@@ -486,14 +908,26 @@ const createStripeSyncService = ({ strapi }: { strapi: Core.Strapi }) => {
       return;
     }
 
+    if (COUPON_EVENT_TYPES.has(event.type) || COUPON_DELETE_EVENT_TYPES.has(event.type)) {
+      await handleCouponEvent(event);
+      return;
+    }
+
+    if (PROMOTION_CODE_EVENT_TYPES.has(event.type)) {
+      await handlePromotionCodeEvent(event);
+      return;
+    }
+
     strapi.log.debug(`${logPrefix} No handler registered for Stripe event "${event.type}".`);
   };
 
   const syncAllResources = async () => {
     const products = await syncProductsFromStripe();
     const prices = await syncPricesFromStripe();
+     const coupons = await syncCouponsFromStripe();
+     const promotionCodes = await syncPromotionCodesFromStripe();
 
-    return { products, prices };
+    return { products, prices, coupons, promotionCodes };
   };
 
   return {
@@ -502,6 +936,8 @@ const createStripeSyncService = ({ strapi }: { strapi: Core.Strapi }) => {
     syncAll: syncAllResources,
     syncProducts: syncProductsFromStripe,
     syncPrices: syncPricesFromStripe,
+    syncCoupons: syncCouponsFromStripe,
+    syncPromotionCodes: syncPromotionCodesFromStripe,
     handleWebhookEvent,
   };
 };

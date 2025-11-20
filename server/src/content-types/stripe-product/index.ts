@@ -699,5 +699,11 @@ export default {
       target: 'plugin::stripe-strapi-plugin.stripe-price',
       mappedBy: 'stripeProduct',
     },
+    applicableCoupons: {
+      type: 'relation',
+      relation: 'manyToMany',
+      target: 'plugin::stripe-strapi-plugin.stripe-coupon',
+      mappedBy: 'appliesToProducts',
+    },
   },
 };
