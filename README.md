@@ -22,21 +22,22 @@ A powerful Strapi plugin to easily manage and sync your Stripe Products, Prices,
 
 ## Overview
 
-This Strapi plugin synchronizes Stripe products with a dedicated `stripe-product` content type. It imports the full catalog once during bootstrap, keeps everything up to date through Stripe webhooks, and can optionally run on a cron schedule. All data flows through the Strapi Document Service to respect draft/publish workflows.
+This Strapi plugin synchronizes Stripe products and prices with dedicated `stripe-product` and `stripe-price` content types. It imports the full catalog once during bootstrap, keeps everything up to date through Stripe webhooks, and can optionally run on a cron schedule. All data flows through the Strapi Document Service to respect draft/publish workflows.
 
 ## ✨ Features
 
 - Provides the **Stripe Products** collection type (name, `stripeProductId`, description, image URL, tax code, active flag, and a flexible metadata component).
-- Performs an initial import of all Stripe products when the Strapi app starts.
-- Optional cron job (default: every 10 minutes) that keeps Strapi in sync with Stripe.
-- Webhook endpoint `POST /api/stripe-strapi-plugin/webhooks/stripe` handling `product.created`, `product.updated`, and `product.deleted`.
-- Service API `strapi.plugin('stripe-strapi-plugin').service('stripeSync')` you can call from custom jobs or scripts.
+- Provides the **Stripe Prices** collection type (relation to a Stripe product, `stripePriceId`, billing details, recurring configuration, tiers, currency, metadata, and lookup helpers).
+- Performs an initial import of all Stripe products when the Strapi app starts and keeps both products and prices aligned afterwards.
+- Optional cron job (default: every 10 minutes) that keeps Strapi in sync with Stripe for products **and** prices.
+- Webhook endpoint `POST /api/stripe-strapi-plugin/webhooks/stripe` handling `product.created`, `product.updated`, `product.deleted`, `price.created`, `price.updated`, and `price.deleted`.
+- Service API `strapi.plugin('stripe-strapi-plugin').service('stripeSync')` you can call from custom jobs or scripts (supports both product and price sync).
 
 ## 🖐 Requirements
 
 - Strapi v5 with the Document Service enabled (the plugin relies on `strapi.documents` for upserts).
-- Stripe secret key with permissions to read products (`Stripe API Version: 2025-10-29.clover`).
-- Optional Stripe webhook secret for product events.
+- Stripe secret key with permissions to read products and prices (`Stripe API Version: 2025-10-29.clover`).
+- Optional Stripe webhook secret for product and price events.
 - Node.js version that matches your Strapi project requirements.
 
 ## ⏳ Installation
@@ -103,7 +104,7 @@ export default [
 ## Stripe Webhooks
 
 1. Create a webhook in Stripe pointing to `https://<your-domain>/api/stripe-strapi-plugin/webhooks/stripe`.
-2. Subscribe to at least `product.created`, `product.updated`, and `product.deleted`.
+2. Subscribe to at least `product.created`, `product.updated`, `product.deleted`, `price.created`, `price.updated`, and `price.deleted`.
 3. Store the Stripe webhook secret (`webhookSecret`) in the plugin configuration.
 
 The endpoint validates every request via the `stripe-signature` header. If validation fails or the secret is missing, the controller responds with an error status.
@@ -111,13 +112,18 @@ The endpoint validates every request via the `stripe-signature` header. If valid
 ## Synchronization Strategy
 
 - **Initial import:** During bootstrap the plugin checks the plugin store for a previous migration run. If none is found (or `alwaysRunMigration` is `true`), every Stripe product is imported once and published.
-- **Cron sync:** When enabled, the cron job periodically calls `stripe.products.list` and upserts all products. The configured schedule is logged and cleaned up during shutdown.
-- **Webhooks:** Stripe sends product events that are immediately upserted or deleted through the Document Service. Unsupported events are logged at debug level.
-- **Manual sync:** Custom jobs can call `await strapi.plugin('stripe-strapi-plugin').service('stripeSync').syncAll();` whenever needed.
+- **Cron sync:** When enabled, the cron job periodically calls Stripe's APIs and upserts products first, then prices. The configured schedule is logged and cleaned up during shutdown.
+- **Webhooks:** Stripe sends product and price events that are immediately upserted or deleted through the Document Service. Unsupported events are logged at debug level.
+- **Manual sync:** Custom jobs can call `await strapi.plugin('stripe-strapi-plugin').service('stripeSync').syncAll();` whenever needed (products + prices). Dedicated helpers `syncProducts` and `syncPrices` are also exposed.
+- **Deletion behaviour for Prices:** Stripe only supports archiving prices. When you delete a Stripe Price entry in Strapi we archive the price in Stripe, but it still exists in your Stripe account and will therefore be recreated in Strapi on the next webhook or cron sync. Keep this in mind when cleaning up your catalog.
 
 ## Content Types & Components
 
-- **`plugin::stripe-strapi-plugin.stripe-product`:** Stores the product name, unique `stripeProductId`, optional description and image URL, required `taxCode` (Enum mapped to Stripe tax codes), boolean `active` flag, and the metadata component.
+- **`plugin::stripe-strapi-plugin.stripe-product`:** Stores the product name, unique `stripeProductId`, optional description and image URL, required `taxCode` (Enum mapped to Stripe tax codes), boolean `active` flag, and the metadata component. Prices link back to the product with a one-to-many relation.
+- **`plugin::stripe-strapi-plugin.stripe-price`:** Stores every Stripe price (`stripePriceId`) including the related product, currency, billing scheme, recurring configuration, tiers, unit amounts, tax behavior, metadata and Stripe lookup keys.
+- **Component `stripe.price-custom-unit-amount`:** Mirrors Stripe's `custom_unit_amount` object (minimum/maximum/preset).
+- **Component `stripe.price-recurring`:** Captures recurring settings (interval, interval count, meter, usage type).
+- **Component `stripe.price-tier`:** Stores tier definitions (flat and unit amounts plus the upper bound).
 - **Component `component.key-value-pairs`:** Captures arbitrary Stripe metadata as key/value pairs and is kept in sync both ways.
 
 ## 👤 Permissions

@@ -1,10 +1,9 @@
 import Stripe from 'stripe';
 import { errors } from '@strapi/utils';
 
-import { STRIPE_API_VERSION } from '../../stripe/constants';
-import { resolvePluginConfig } from '../../stripe/config';
 import { isRunningInStripeSyncContext } from '../../stripe/lifecycle-context';
 import { buildStripeMetadata, type MetadataEntry } from '../../stripe/metadata';
+import { getStripeClient } from '../../stripe/client';
 
 type StripeProductLifecycleData = {
   name?: string | null;
@@ -24,22 +23,6 @@ type LifecycleEvent = {
     entry?: StripeProductLifecycleData;
   };
   result?: StripeProductLifecycleData;
-};
-
-const getSecretKey = (): string | null => {
-  return resolvePluginConfig(strapi).secretKey;
-};
-
-const getStripeClient = () => {
-  const secretKey = getSecretKey();
-
-  if (!secretKey) {
-    throw new errors.ApplicationError(
-      'No Stripe secret key configured. Please configure it in the plugin.'
-    );
-  }
-
-  return new Stripe(secretKey, { apiVersion: STRIPE_API_VERSION });
 };
 
 const createStripeProduct = async (data: StripeProductLifecycleData) => {

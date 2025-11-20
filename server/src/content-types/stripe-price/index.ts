@@ -13,7 +13,6 @@ export default {
   attributes: {
     stripePriceId: {
       type: 'string',
-      required: true,
       unique: true,
     },
     stripeProduct: {
