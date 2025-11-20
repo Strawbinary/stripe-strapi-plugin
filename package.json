@@ -82,6 +82,6 @@
     "kind": "plugin",
     "name": "stripe-strapi-plugin",
     "displayName": "Stripe Plugin",
-    "description": ""
+    "description": "A powerful Strapi plugin to easily manage and sync your Stripe Products, Prices, Coupons and more – directly in your project."
   }
 }
