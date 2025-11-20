@@ -5,8 +5,8 @@
 </div>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@strawbinary-io/">
-    <img src="https://img.shields.io/npm/v/" alt="NPM Version" />
+  <a href="https://www.npmjs.com/package/@strawbinary-io/stripe-strapi-plugin">
+    <img src="https://img.shields.io/npm/v/%40strawbinary-io%2Fstripe-strapi-plugin" alt="NPM Version" />
   </a>
 </p>
 
