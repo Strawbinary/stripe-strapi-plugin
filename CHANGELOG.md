@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.0.3](https://github.com/Strawbinary/stripe-strapi-plugin/compare/v0.0.2...v0.0.3) (2025-11-21)
+
+
+### Bug Fixes
+
+* adjust registration of components on startup ([b4c197a](https://github.com/Strawbinary/stripe-strapi-plugin/commit/b4c197ab26cbe77f089ad2f1b8c3e3a65d394541))
+
 ## [0.0.2](https://github.com/Strawbinary/stripe-strapi-plugin/compare/v0.0.1...v0.0.2) (2025-11-20)
 
 ## 0.0.1 (2025-11-20)
