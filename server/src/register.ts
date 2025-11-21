@@ -4,8 +4,8 @@ import { registerComponents } from './components';
 import { STRIPE_SYNC_CRON_JOB_NAME } from './constants';
 import { resolvePluginConfig } from './stripe/config';
 
-const register = ({ strapi }: { strapi: Core.Strapi }) => {
-  registerComponents(strapi);
+const register = async ({ strapi }: { strapi: Core.Strapi }) => {
+  await registerComponents(strapi);
 
   const pluginConfig = resolvePluginConfig(strapi);
 

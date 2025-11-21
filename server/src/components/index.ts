@@ -28,28 +28,55 @@ const toCamelCase = (value: string) => {
   const [first, ...rest] = parts;
   return first.toLowerCase() + rest.map((part) => upperFirst(part.toLowerCase())).join('');
 };
+const buildGlobalId = (uid: string) => upperFirst(toCamelCase(`component_${uid.replace(/\./g, '_')}`));
 
-export const registerComponents = (strapi: Core.Strapi) => {
-  const components: Record<string, unknown> = {};
+export const registerComponents = async (strapi: Core.Strapi) => {
+  const componentService = strapi.plugin('content-type-builder').services.components;
+  const existingComponents = strapi.components ?? ({} as Core.Strapi['components']);
+  const memoryComponents = (strapi.components ??= {} as Core.Strapi['components']);
 
-  Object.entries(rawComponents).forEach(([category, schemas]) => {
-    Object.entries(schemas).forEach(([name, schema]) => {
+  for (const [category, schemas] of Object.entries(rawComponents)) {
+    for (const [name, schema] of Object.entries(schemas)) {
       const uid = `${category}.${name}`;
-      const schemaClone = JSON.parse(JSON.stringify(schema));
 
-      components[uid] = {
+      if (existingComponents[uid]) {
+        continue;
+      }
+
+      const { info = {}, attributes, pluginOptions, config } = schema as {
+        info?: { displayName?: string; icon?: string; description?: string };
+        attributes: Record<string, unknown>;
+        pluginOptions?: Record<string, unknown>;
+        config?: Record<string, unknown>;
+      };
+
+      await componentService.createComponent({
+        component: {
+          category,
+          displayName: info.displayName,
+          icon: info.icon,
+          description: info.description,
+          attributes,
+          pluginOptions,
+          config,
+        },
+      });
+
+      // Register in-memory so Strapi can resolve the component immediately on first start
+      const schemaClone = JSON.parse(JSON.stringify(schema));
+      memoryComponents[uid] = {
         ...schema,
         __schema__: schemaClone,
+        __filename__: `${name}.json`,
         uid,
         category,
         modelType: 'component',
         modelName: name,
-        globalId: upperFirst(toCamelCase(`component_${uid.replace(/\./g, '_')}`)),
+        globalId: buildGlobalId(uid),
+        config: config ?? {},
       };
-    });
-  });
-
-  strapi.get('components').add(components);
+    }
+  }
 };
 
 export default rawComponents;
