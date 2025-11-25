@@ -1,6 +1,6 @@
 {
   "name": "@strawbinary-io/stripe-strapi-plugin",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "A powerful Strapi plugin to easily manage and sync your Stripe Products, Prices, Coupons and more – directly in your project.",
   "keywords": [
     "strapi",

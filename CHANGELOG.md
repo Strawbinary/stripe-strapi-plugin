@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.0.4](https://github.com/Strawbinary/stripe-strapi-plugin/compare/v0.0.3...v0.0.4) (2025-11-25)
+
+
+### Features
+
+* add content api endpoints ([4229b9a](https://github.com/Strawbinary/stripe-strapi-plugin/commit/4229b9a4d3da583b631b14a5e9354960d6f420cc))
+
 ## [0.0.3](https://github.com/Strawbinary/stripe-strapi-plugin/compare/v0.0.2...v0.0.3) (2025-11-21)
 
 
