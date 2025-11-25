@@ -2,35 +2,46 @@ export default [
   {
     method: 'GET',
     path: '/',
-    // name of the controller file & the method.
-    handler: 'controller.index',
-    config: {
-      policies: [],
-    },
+    handler: 'stripe-product.index',
   },
   {
     method: 'GET',
     path: '/stripe-products',
-    handler: 'controller.find',
-    config: {
-      policies: [],
-    },
+    handler: 'stripe-product.find',
   },
   {
     method: 'GET',
     path: '/stripe-products/:documentId',
-    handler: 'controller.findOne',
-    config: {
-      policies: [],
-    },
+    handler: 'stripe-product.findOne',
   },
   {
-    method: 'POST',
-    path: '/webhooks/stripe',
-    handler: 'stripeWebhook.handle',
-    config: {
-      auth: false,
-      policies: [],
-    },
+    method: 'GET',
+    path: '/stripe-coupons',
+    handler: 'stripe-coupon.find',
+  },
+  {
+    method: 'GET',
+    path: '/stripe-coupons/:documentId',
+    handler: 'stripe-coupon.findOne',
+  },
+  {
+    method: 'GET',
+    path: '/stripe-prices',
+    handler: 'stripe-price.find',
+  },
+  {
+    method: 'GET',
+    path: '/stripe-prices/:documentId',
+    handler: 'stripe-price.findOne',
+  },
+  {
+    method: 'GET',
+    path: '/stripe-promotion-codes',
+    handler: 'stripe-promotion-code.find',
+  },
+  {
+    method: 'GET',
+    path: '/stripe-promotion-codes/:documentId',
+    handler: 'stripe-promotion-code.findOne',
   },
 ];

@@ -11,7 +11,14 @@ export default {
   options: {
     draftAndPublish: false,
   },
-  pluginOptions: {},
+  pluginOptions: {
+    'content-manager': {
+      visible: true,
+    },
+    'content-type-builder': {
+      visible: true,
+    },
+  },
   attributes: {
     stripePriceId: {
       type: 'string',

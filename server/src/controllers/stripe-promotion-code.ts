@@ -2,7 +2,7 @@ import { type Core, factories } from '@strapi/strapi';
 import type { Context } from 'koa';
 import { errors } from '@strapi/utils';
 
-import { PLUGIN_ID, STRIPE_PRODUCT_UID } from '../constants';
+import { PLUGIN_ID, STRIPE_PROMOTION_CODE_UID } from '../constants';
 
 const buildQuery = (ctx: Context) => {
   if (!ctx?.query || typeof ctx.query !== 'object') {
@@ -17,32 +17,23 @@ const getDocumentsApi = () => {
 
   if (typeof documentsApi !== 'function') {
     throw new errors.ApplicationError(
-      '[stripe-strapi-plugin] Document service API is unavailable for stripe products.'
+      '[stripe-strapi-plugin] Document service API is unavailable for stripe promotion codes.'
     );
   }
 
-  return documentsApi(STRIPE_PRODUCT_UID);
+  return documentsApi(STRIPE_PROMOTION_CODE_UID);
 };
 
 export default factories.createCoreController(
-  `plugin::${PLUGIN_ID}.stripe-product`,
+  `plugin::${PLUGIN_ID}.stripe-promotion-code`,
   ({ strapi }) => ({
-    index(ctx) {
-      const syncConfig = strapi.plugin('stripe-strapi-plugin').service('stripeSync').getConfig();
-
-      ctx.body = {
-        message: 'Stripe plugin is ready',
-        cron: syncConfig.sync.cron,
-      };
-    },
-
     async find(ctx) {
       const documentsApi = getDocumentsApi();
       const query = buildQuery(ctx) as Parameters<typeof documentsApi.findMany>[0];
 
-      const products = await documentsApi.findMany(query);
+      const promotionCodes = await documentsApi.findMany(query);
 
-      ctx.body = products;
+      ctx.body = promotionCodes;
     },
 
     async findOne(ctx) {
@@ -58,17 +49,17 @@ export default factories.createCoreController(
         return;
       }
 
-      const product = await documentsApi.findOne({
+      const promotionCode = await documentsApi.findOne({
         ...(query ?? {}),
         documentId,
       });
 
-      if (!product) {
-        ctx.notFound('Stripe product not found');
+      if (!promotionCode) {
+        ctx.notFound('Stripe promotion code not found');
         return;
       }
 
-      ctx.body = product;
+      ctx.body = promotionCode;
     },
   })
 );
